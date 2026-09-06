@@ -1,0 +1,9 @@
+.terraform/
+__pycache__/
+*.pyc
+*.tfstate*
+*.tfplan
+*.tar.gz
+.env
+terraform.rc
+.test-deps/

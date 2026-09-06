@@ -1,0 +1,4 @@
+app_id,environment,server_key,instance_type,root_disk_gib
+APP-FLASK,dev,web-01,t2.micro,8
+APP-FLASK,stage,web-01,t2.micro,8
+APP-FLASK,prod,web-01,t2.micro,8

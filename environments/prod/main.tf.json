@@ -1,0 +1,54 @@
+{
+  "variable": {
+    "aws_account_id": {
+      "default": "180840262641"
+    },
+    "aws_region": {
+      "default": "us-east-1"
+    },
+    "environment": {
+      "default": "prod"
+    },
+    "app_id": {
+      "default": "APP-FLASK"
+    },
+    "app_version": {
+      "default": "c8fac3f2b99f2c96"
+    },
+    "client_cidr": {
+      "default": null
+    },
+    "vpc_cidr": {
+      "default": "10.63.0.0/16"
+    },
+    "servers": {
+      "default": {
+        "web-01": {
+          "instance_type": "t2.micro",
+          "root_disk_gib": 8
+        }
+      }
+    }
+  },
+  "module": {
+    "deployment": {
+      "source": "../../deployments",
+      "aws_account_id": "${var.aws_account_id}",
+      "aws_region": "${var.aws_region}",
+      "environment": "${var.environment}",
+      "app_id": "${var.app_id}",
+      "app_version": "${var.app_version}",
+      "client_cidr": "${var.client_cidr}",
+      "vpc_cidr": "${var.vpc_cidr}",
+      "servers": "${var.servers}"
+    }
+  },
+  "output": {
+    "instances": {
+      "value": "${module.deployment.instances}"
+    },
+    "urls": {
+      "value": "${module.deployment.urls}"
+    }
+  }
+}

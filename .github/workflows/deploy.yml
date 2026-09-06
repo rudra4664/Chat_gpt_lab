@@ -1,0 +1,31 @@
+name: Inventory and Terraform CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15.7'
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/generate_deployments.py --check
+      - run: pip install -r app/requirements.txt
+      - run: python -m unittest discover -s app -p 'test_*.py' -v
+      - run: terraform fmt -check -recursive
+      - name: Validate environment roots
+        run: |
+          for env in dev stage prod; do
+            terraform -chdir=environments/$env init -backend=false -input=false
+            terraform -chdir=environments/$env validate
+          done
+# TFC watches GitHub through its VCS integration. Before browser-confirming apply,
+# inspect both CI and the TFC plan. This CI alone does not enforce an apply gate.
