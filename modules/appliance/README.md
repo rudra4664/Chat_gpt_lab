@@ -1,3 +1,20 @@
+## Appliance application template
+
+Flow: deployment template -> appliance template -> NYL EC2 resource module -> NYL EC2 source module -> AWS.
+
+This template passes the existing input names, types, and defaults through to the
+resource module. Variable validations, mandatory tag merging, encryption settings,
+and the mapping of root_volume and network to source inputs remain in that module.
+No custom variable validation blocks are duplicated here.
+
+AMI selection uses instance.strategic_os_type and instance.strategic_ami_build.
+The approved appliance image must match the existing catalog lookup and allowed
+values. The resource module does not accept a direct AMI ID.
+
+The resource registry address follows the supplied resource repository example.
+That example does not specify a resource module version, so none is invented here.
+The former 1.1.2 constraint belonged to the source module; it remains owned by the
+resource module. Terraform and AWS provider requirements are unchanged.
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -14,7 +31,7 @@ No providers.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_ec2"></a> [ec2](#module\_ec2) | app.terraform.io/NYL-Prod/apps-source/aws//modules/terraform-aws-ec2-instance | 1.1.2 |
+| <a name="module_ec2"></a> [ec2](#module\_ec2) | app.terraform.io/NYL-Prod/apps-resources/aws//modules/terraform-aws-ec2-instance | n/a |
 
 ## Resources
 
