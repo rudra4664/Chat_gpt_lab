@@ -1,39 +1,41 @@
-# Generic appliance application template
+<!-- BEGIN_TF_DOCS -->
+## Requirements
 
-Status: reusable infrastructure scaffold, not a vendor-certified appliance deployment. No appliance AMI, license, network values or sizing have been invented. This module is not called by the Flask environments and will not launch an appliance merely by being committed.
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.15 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 6.45.0 |
 
-## File-by-file flow
+## Providers
 
-| File | Meaning | Scenario / connection |
-|---|---|---|
-| providers.tf | Declares Terraform and AWS provider requirements | Deployment root supplies region, account restriction and AWS authentication |
-| variables.tf | Required identity/image/network inputs and optional capabilities | Appliance owner provides an AMI; its value becomes var.ami_id |
-| locals.tf | Computes mandatory identity tags | Caller tags merge with name/appid/environment; mandatory values win |
-| main.tf | Calls the original EC2 source module | var.ami_id -> module.ec2 instance.ami -> original source ec2.tf |
-| outputs.tf | Exposes minimal operational identifiers | Instance and ENI IDs return to a future deployment root |
+No providers.
 
-The original supplied source repository is pinned to commit 24d81f6e5b7dc9ffce9f4a65ebe94da69fe39429. This template directly composes that source; it does not use the NYL resource wrapper because that wrapper forces NYL image selection. It also does not use the Flask lab's modified source because that version forces public addressing. If your organization requires a resource-wrapper layer, introduce an appliance-compatible governed wrapper after the actual appliance requirements are known.
+## Modules
 
-## What it builds
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_ec2"></a> [ec2](#module\_ec2) | app.terraform.io/NYL-Prod/apps-source/aws//modules/terraform-aws-ec2-instance | 1.1.2 |
 
-One EC2 instance, one separately managed primary ENI, optional additional ENIs/attachments, and optional encrypted additional EBS volumes/attachments. It references an existing subnet, security groups, optional instance profile and optional KMS keys. It creates no VPC, firewall rules, route changes, public IP association, vendor license or appliance-specific configuration. One future module call per appliance, or a caller for_each, provides repetition.
+## Resources
 
-## Required values later
+No resources.
 
-name, app_id (APP-*), environment, lob, ami_id, instance_type, primary_network_interface.subnet_id, and primary_network_interface.security_group_ids. These have no defaults: they are deployment decisions, not template-author guesses. Put non-secret values in your future environment root variable defaults as requested; no .tfvars or TFC API is required.
+## Inputs
 
-Optional inputs: extra interfaces, extra disks, root disk overrides, IAM profile, EC2 key, vendor bootstrap, detailed monitoring and termination protection. source_dest_check defaults true; set false on the relevant interfaces only for an appliance that must forward traffic. This alone does not configure forwarding or routes.
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_additional_volumes"></a> [additional\_volumes](#input\_additional\_volumes) | Additional EBS volumes to attach, keyed by an arbitrary name. type is restricted to gp2, gp3 or standard; size has no platform-imposed min/max beyond AWS's own per-type limits. snapshot\_id restores the volume from an existing EBS snapshot instead of creating it blank; size may be omitted when snapshot\_id is set. | <pre>map(object({<br/>    device_name = string<br/>    size        = optional(number)<br/>    snapshot_id = optional(string)<br/>    type        = optional(string, "gp3")<br/>  }))</pre> | `{}` | no |
+| <a name="input_app_id"></a> [app\_id](#input\_app\_id) | Application ID governance tag. Must begin with APP-. | `string` | n/a | yes |
+| <a name="input_env"></a> [env](#input\_env) | Environment (dev, qa, stage, prod or test). | `string` | n/a | yes |
+| <a name="input_instance"></a> [instance](#input\_instance) | EC2 instance configuration. | <pre>object({<br/>    iam_instance_profile        = string<br/>    instance_type               = string<br/>    key_name                    = optional(string)<br/>    monitoring                  = optional(bool, true)<br/>    name                        = string<br/>    strategic_ami_build         = string<br/>    strategic_os_type           = string<br/>    user_data                   = optional(string)<br/>    user_data_base64            = optional(string)<br/>    user_data_replace_on_change = optional(bool, false)<br/>    root_volume = object({<br/>      size = number<br/>      type = optional(string, "gp3")<br/>    })<br/>  })</pre> | n/a | yes |
+| <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | KMS key alias ARN used to encrypt the root volume and any additional EBS volumes, provisioned via the dedicated KMS module and passed in by the calling application repository. Must be an alias ARN (not a raw key ARN). | `string` | n/a | yes |
+| <a name="input_lob"></a> [lob](#input\_lob) | Account Name | `string` | n/a | yes |
+| <a name="input_network"></a> [network](#input\_network) | Primary network interface configuration. private\_ip is optional and forces the ENI to use that address instead of an auto-assigned one — e.g. to preserve the prior instance's private IP during a blue/green cutover. | <pre>object({<br/>    private_ip         = optional(string)<br/>    security_group_ids = set(string)<br/>    subnet_id          = string<br/>  })</pre> | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | Application-specific tags, merged on top of mandatory governance tags. | `map(string)` | `{}` | no |
 
-## Before creating a real appliance deployment
+## Outputs
 
-- Confirm vendor, regional AMI owner/ID, Marketplace subscription/license and instance architecture/size.
-- Confirm interface count/device ordering, same-AZ subnet compatibility and EC2 interface limits. Extra ENIs attach after EC2 creation; some appliances require all interfaces at launch and therefore need a source-module change.
-- Confirm vendor support for IMDSv2 and hop limit 1: the source enforces them.
-- The source ignores AMI changes, so an image upgrade alone does not roll out a replacement. Define a deliberate vendor-supported upgrade process.
-- Confirm root encryption when root_block_device is null: this template leaves the AMI/account defaults in effect. Pass an explicit encrypted override where required.
-- Define vendor bootstrap, licensing, disk mount behavior, health checks, HA, routing and cutover separately. Generic EC2 success does not verify appliance readiness.
-- User data is not a secret store; do not commit credentials/license tokens or assume sensitive marking removes them from Terraform state.
-
-## Validation
-
-Terraform init/validate can check this module without supplying real deployment values. They cannot verify vendor compatibility, license acceptance, AMI existence or runtime health. Missing required values are intentionally not replaced by sample production-looking values.
+| Name | Description |
+|------|-------------|
+| <a name="output_resources"></a> [resources](#output\_resources) | Map of all resources created by this module. |
+<!-- END_TF_DOCS -->

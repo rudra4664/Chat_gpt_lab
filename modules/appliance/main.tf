@@ -1,26 +1,45 @@
-# Reuse the ORIGINAL supplied EC2 implementation, pinned for reproducibility.
-# The Flask-specific lab adaptation forces public addressing and is unsuitable
-# as a generic appliance base. The existing NYL wrapper forces strategic AMIs.
 module "ec2" {
-  source      = "git::https://github.com/rudra4664/terraform-aws-apps-source.git//modules/terraform-aws-ec2-instance?ref=24d81f6e5b7dc9ffce9f4a65ebe94da69fe39429"
-  env         = var.environment
-  lob         = var.lob
-  tags        = local.appliance_tags
-  volume_tags = local.appliance_tags
-  instance = {
-    name                        = var.name
-    ami                         = var.ami_id
-    instance_type               = var.instance_type
-    use_strategic_ami           = false
-    iam_instance_profile        = var.instance_profile
-    key_name                    = var.key_name
-    monitoring                  = var.monitoring
-    disable_api_termination     = var.disable_api_termination
-    user_data                   = var.user_data
-    user_data_replace_on_change = var.user_data_replace_on_change
-    root_block_device           = var.root_block_device
+  source  = "app.terraform.io/NYL-Prod/apps-source/aws//modules/terraform-aws-ec2-instance"
+  version = "1.1.2"
+  env     = var.env
+  lob     = var.lob
+  tags    = local.effective_tags
+
+  additional_volumes = {
+    for k, v in var.additional_volumes : k => {
+      device_name = v.device_name
+      kms_key_id  = var.kms_key_id
+      size        = v.size
+      snapshot_id = v.snapshot_id
+      tags        = local.effective_tags
+      type        = v.type
+    }
   }
-  primary_network_interface     = var.primary_network_interface
-  additional_network_interfaces = var.additional_network_interfaces
-  additional_volumes            = var.additional_volumes
+
+  instance = {
+    iam_instance_profile        = var.instance.iam_instance_profile
+    instance_type               = var.instance.instance_type
+    key_name                    = var.instance.key_name
+    monitoring                  = var.instance.monitoring
+    name                        = var.instance.name
+    strategic_ami_build         = var.instance.strategic_ami_build
+    strategic_os_type           = var.instance.strategic_os_type
+    use_strategic_ami           = true
+    user_data                   = var.instance.user_data
+    user_data_base64            = var.instance.user_data_base64
+    user_data_replace_on_change = var.instance.user_data_replace_on_change
+
+    root_block_device = {
+      encrypted   = true
+      kms_key_id  = var.kms_key_id
+      volume_size = var.instance.root_volume.size
+      volume_type = var.instance.root_volume.type
+    }
+  }
+
+  primary_network_interface = {
+    private_ip         = var.network.private_ip
+    security_group_ids = var.network.security_group_ids
+    subnet_id          = var.network.subnet_id
+  }
 }
