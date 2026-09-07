@@ -1,15 +1,3 @@
-variable "environment" { type = string }
-variable "app_id" { type = string }
-variable "app_version" { type = string }
-variable "ami_id" { type = string }
-variable "subnet_id" { type = string }
-variable "security_group_ids" { type = set(string) }
-variable "instance_profile" { type = string }
-variable "kms_alias_arn" { type = string }
-variable "servers" {
-  type = map(object({ instance_type = string, root_disk_gib = number }))
-}
-
 module "servers" {
   for_each   = var.servers
   source     = "../ec2-resource"
@@ -35,13 +23,3 @@ module "servers" {
     })
   }
 }
-
-output "instances" {
-  value = { for name, server in module.servers : name => {
-    id         = server.resources.instance.id
-    public_ip  = server.resources.instance.public_ip
-    private_ip = server.resources.primary_network_interface.private_ip
-    eni_id     = server.resources.primary_network_interface.id
-  } }
-}
-
